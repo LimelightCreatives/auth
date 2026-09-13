@@ -1,0 +1,47 @@
+// This schema is the single source of truth for the shared "accounts" database.
+// Every Vercel project that needs to read/write accounts should copy this file
+// (or import it from a shared internal package) and point at the SAME
+// DATABASE_URL. See README.md for how to wire that up across projects.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")   // pooled connection (for serverless functions)
+  directUrl = env("DIRECT_URL")     // direct connection (for migrations)
+}
+
+enum Role {
+  ADMIN
+  PARTICIPANT
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  firstName String
+  lastName  String
+  role      Role     @default(PARTICIPANT)
+  createdAt DateTime @default(now())
+
+  codes VerificationCode[]
+
+  @@map("users")
+}
+
+// One-time 6-digit login codes. Short-lived, single-use.
+model VerificationCode {
+  id        String   @id @default(uuid())
+  userId    String
+  codeHash  String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("verification_codes")
+}
