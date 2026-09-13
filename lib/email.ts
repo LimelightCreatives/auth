@@ -12,7 +12,7 @@ export async function sendLoginCode(email: string, code: string) {
   }
 
   await resend.emails.send({
-    from: process.env.EMAIL_FROM ?? "sign-in@yourdomain.com",
+    from: process.env.EMAIL_FROM ?? "sign-in@auth.limelightcreatives.org",
     to: email,
     subject: `${code} is your sign-in code`,
     text: `Your sign-in code is ${code}. It expires in 10 minutes. If you didn't request this, you can ignore this email.`,
