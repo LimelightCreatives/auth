@@ -35,14 +35,19 @@ function sanitizeNext(next: string | null): string {
   return "/dashboard";
 }
 
+type Step = "email" | "code" | "name";
+
 function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
   const next = sanitizeNext(params.get("next"));
 
-  const [step, setStep] = useState<"email" | "code">("email");
+  const [step, setStep] = useState<Step>("email");
+  const [isNewUser, setIsNewUser] = useState(false);
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "checking" | "error">("idle");
   const [error, setError] = useState("");
 
@@ -58,6 +63,8 @@ function LoginForm() {
     });
 
     if (res.ok) {
+      const data = await res.json();
+      setIsNewUser(Boolean(data.isNewUser));
       setStep("code");
       setStatus("idle");
     } else {
@@ -75,9 +82,34 @@ function LoginForm() {
     const res = await signIn("email-code", { email, code, redirect: false });
 
     if (res?.ok) {
-      router.push(next);
+      if (isNewUser) {
+        setStep("name");
+        setStatus("idle");
+      } else {
+        router.push(next);
+      }
     } else {
       setError("That code didn't work. Check it and try again.");
+      setStatus("idle");
+    }
+  }
+
+  async function handleCompleteProfile(e: React.FormEvent) {
+    e.preventDefault();
+    setStatus("checking");
+    setError("");
+
+    const res = await fetch("/api/auth/complete-profile", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ firstName, lastName }),
+    });
+
+    if (res.ok) {
+      router.push(next);
+    } else {
+      const data = await res.json().catch(() => ({}));
+      setError(data.error ?? "Something went wrong. Try again.");
       setStatus("idle");
     }
   }
@@ -88,7 +120,7 @@ function LoginForm() {
         <div className="absolute inset-0 translate-x-3 translate-y-3 bg-[var(--ontik-accent)] md:translate-x-4 md:translate-y-4" />
 
         <div className="relative border-2 border-black p-8" style={{ background: "var(--background)" }}>
-          {step === "email" ? (
+          {step === "email" && (
             <>
               <h1 className="mb-2 text-3xl font-display font-bold" style={{ color: "var(--foreground)" }}>
                 Sign in
@@ -122,7 +154,9 @@ function LoginForm() {
                 )}
               </form>
             </>
-          ) : (
+          )}
+
+          {step === "code" && (
             <>
               <h1 className="mb-2 text-2xl font-display font-bold" style={{ color: "var(--foreground)" }}>
                 Enter your code
@@ -168,6 +202,56 @@ function LoginForm() {
                 >
                   Use a different email
                 </button>
+              </form>
+            </>
+          )}
+
+          {step === "name" && (
+            <>
+              <h1 className="mb-2 text-2xl font-display font-bold" style={{ color: "var(--foreground)" }}>
+                Welcome! What&rsquo;s your name?
+              </h1>
+              <p className="mb-8 text-sm" style={{ color: "var(--foreground)", opacity: 0.65 }}>
+                Just need this to finish setting up your account.
+              </p>
+
+              <form onSubmit={handleCompleteProfile} className="flex flex-col gap-3">
+                <input
+                  type="text"
+                  required
+                  placeholder="First name"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  className="border-[2px] px-4 py-3 text-sm font-body outline-none"
+                  style={{
+                    borderColor: "var(--foreground)",
+                    background: "var(--background)",
+                    color: "var(--foreground)",
+                    borderRadius: 0,
+                  }}
+                />
+                <input
+                  type="text"
+                  required
+                  placeholder="Last name"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  className="border-[2px] px-4 py-3 text-sm font-body outline-none"
+                  style={{
+                    borderColor: "var(--foreground)",
+                    background: "var(--background)",
+                    color: "var(--foreground)",
+                    borderRadius: 0,
+                  }}
+                />
+                <Button type="submit" disabled={status === "checking"} className="w-full text-center">
+                  {status === "checking" ? "Saving…" : "Finish"}
+                </Button>
+                {error && (
+                  <p className="text-sm" style={{ color: "#c0392b" }}>
+                    {error}
+                  </p>
+                )}
               </form>
             </>
           )}
