@@ -8,23 +8,21 @@ function generateCode() {
 }
 
 export async function POST(req: Request) {
-  const { email, firstName, lastName } = await req.json();
+  const { email } = await req.json();
 
   if (!email || typeof email !== "string") {
     return NextResponse.json({ error: "Email is required" }, { status: 400 });
   }
   const normalizedEmail = email.toLowerCase().trim();
 
-  // Look the account up; only auto-create it as a participant if names were
-  // supplied (e.g. a self-service signup form). Admin accounts should be
-  // created directly in the database/admin console, not through this route.
   let user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+  const isNewUser = !user;
+
+  // Create a bare-bones user so we have somewhere to attach the code.
+  // Name gets filled in after they've proven ownership of the email.
   if (!user) {
-    if (!firstName || !lastName) {
-      return NextResponse.json({ error: "No account found for this email" }, { status: 404 });
-    }
     user = await prisma.user.create({
-      data: { email: normalizedEmail, firstName, lastName },
+      data: { email: normalizedEmail },
     });
   }
 
@@ -41,5 +39,5 @@ export async function POST(req: Request) {
 
   await sendLoginCode(normalizedEmail, code);
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, isNewUser });
 }
