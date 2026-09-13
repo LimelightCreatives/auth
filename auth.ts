@@ -46,7 +46,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         return {
           id: user.id,
           email: user.email,
-          name: `${user.firstName} ${user.lastName}`,
+          name: user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : null,
           role: user.role,
         };
       },
@@ -55,10 +55,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
   callbacks: {
     // Carry id/role from the user object into the JWT, then into the session.
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
       if (user) {
         token.id = user.id;
         token.role = (user as { role: string }).role;
+      }
+      if (trigger === "update" && session?.name) {
+        token.name = session.name;
       }
       return token;
     },

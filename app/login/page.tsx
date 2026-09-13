@@ -2,7 +2,7 @@
 
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { signIn } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 import { Button } from "@/components/Button";
 
 function Sparkle(props: React.SVGProps<SVGSVGElement>) {
@@ -41,6 +41,7 @@ function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
   const next = sanitizeNext(params.get("next"));
+  const { update } = useSession();
 
   const [step, setStep] = useState<Step>("email");
   const [isNewUser, setIsNewUser] = useState(false);
@@ -106,6 +107,9 @@ function LoginForm() {
     });
 
     if (res.ok) {
+      // Force the JWT to pick up the name we just saved, since it was
+      // baked in as null at sign-in time (session strategy is jwt).
+      await update({ name: `${firstName} ${lastName}` });
       router.push(next);
     } else {
       const data = await res.json().catch(() => ({}));
