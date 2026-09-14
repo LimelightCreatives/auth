@@ -191,7 +191,7 @@ function LoginForm() {
                   disabled={status === "checking" || code.length !== 6}
                   className="w-full text-center"
                 >
-                  {status === "checking" ? "Checking…" : "Verify and sign in"}
+                  {status === "checking" ? "Checking…" : "Verify"}
                 </Button>
                 {error && (
                   <p className="text-sm" style={{ color: "#c0392b" }}>

@@ -1,4 +1,5 @@
 import localFont from "next/font/local";
+import { Providers } from "./providers";
 import "./globals.css";
 
 const wordmark = localFont({
@@ -53,7 +54,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body
         className={`${wordmark.variable} ${display.variable} ${body.variable} min-h-screen font-body antialiased`}
       >
-        {children}
+        {<Providers>{children}</Providers>}
       </body>
     </html>
   );
