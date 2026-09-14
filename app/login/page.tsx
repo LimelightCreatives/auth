@@ -120,7 +120,7 @@ function LoginForm() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center px-6">
+    <main className="flex min-h-[100dvh] items-center justify-center px-6">
       <div className="relative w-full max-w-sm">
         <div className="absolute inset-0 translate-x-3 translate-y-3 bg-[var(--ontik-accent)] md:translate-x-4 md:translate-y-4" />
 
