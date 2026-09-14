@@ -213,10 +213,10 @@ function LoginForm() {
           {step === "name" && (
             <>
               <h1 className="mb-2 text-2xl font-display font-bold" style={{ color: "var(--foreground)" }}>
-                Welcome! What&rsquo;s your name?
+                Welcome! Let&rsquo;s finish setting up your account.
               </h1>
               <p className="mb-8 text-sm" style={{ color: "var(--foreground)", opacity: 0.65 }}>
-                Just need this to finish setting up your account.
+                Your account was successfully created. We just need to finish setting up one more thing.
               </p>
 
               <form onSubmit={handleCompleteProfile} className="flex flex-col gap-3">
