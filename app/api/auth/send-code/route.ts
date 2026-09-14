@@ -16,10 +16,8 @@ export async function POST(req: Request) {
   const normalizedEmail = email.toLowerCase().trim();
 
   let user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
-  const isNewUser = !user;
+  const isNewUser = !user || !user.firstName || !user.lastName;
 
-  // Create a bare-bones user so we have somewhere to attach the code.
-  // Name gets filled in after they've proven ownership of the email.
   if (!user) {
     user = await prisma.user.create({
       data: { email: normalizedEmail },

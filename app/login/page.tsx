@@ -82,16 +82,17 @@ function LoginForm() {
 
     const res = await signIn("email-code", { email, code, redirect: false });
 
-    if (res?.ok) {
-      if (isNewUser) {
-        setStep("name");
-        setStatus("idle");
-      } else {
-        router.push(next);
-      }
-    } else {
+    if (res?.error) {
       setError("That code didn't work. Check it and try again.");
       setStatus("idle");
+      return;
+    }
+
+    if (isNewUser) {
+      setStep("name");
+      setStatus("idle");
+    } else {
+      router.push(next);
     }
   }
 
