@@ -79,30 +79,29 @@ function LoginForm() {
 
     const res = await signIn("email-code", { email, code, redirect: false });
 
-    if (res?.ok) {
-      const session = await getSession();
-
-      if (!session?.user) {
-        // Credentials were valid, but no session was actually established —
-        // almost always a cookie problem (wrong domain, blocked cookies, etc.)
-        setError("Signed in, but couldn't start your session. Please try again.");
-        setStatus("idle");
-        return;
-      }
-
-      const needsProfile = Boolean(
-        (session.user as { needsProfile?: boolean }).needsProfile
-      );
-
-      if (needsProfile) {
-        setStep("name");
-        setStatus("idle");
-      } else {
-        router.push(next);
-      }
-    } else {
+    if (res?.error) {
       setError("That code didn't work. Check it and try again.");
       setStatus("idle");
+      return;
+    }
+
+    const session = await getSession();
+
+    if (!session?.user) {
+      setError("Signed in, but couldn't start your session. Please try again.");
+      setStatus("idle");
+      return;
+    }
+
+    const needsProfile = Boolean(
+      (session.user as { needsProfile?: boolean }).needsProfile
+    );
+
+    if (needsProfile) {
+      setStep("name");
+      setStatus("idle");
+    } else {
+      router.push(next);
     }
   }
 
