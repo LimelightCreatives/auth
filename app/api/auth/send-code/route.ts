@@ -54,7 +54,6 @@ export async function POST(req: Request) {
   }
 
   let user = existingUser;
-  const isNewUser = !user;
   if (!user) {
     user = await prisma.user.create({ data: { email: normalizedEmail } });
   }
@@ -76,5 +75,5 @@ export async function POST(req: Request) {
 
   await sendLoginCode(normalizedEmail, code);
 
-  return NextResponse.json({ ok: true, isNewUser });
+  return NextResponse.json({ ok: true });
 }

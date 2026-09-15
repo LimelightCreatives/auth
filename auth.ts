@@ -33,11 +33,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         });
         if (!record) return null;
 
-        // Lock out after too many wrong guesses, even if the code hasn't expired yet.
         const MAX_ATTEMPTS = 5;
-        if (record.attempts >= MAX_ATTEMPTS) {
-          return null;
-        }
+        if (record.attempts >= MAX_ATTEMPTS) return null;
 
         const valid = await bcrypt.compare(code, record.codeHash);
 
@@ -59,27 +56,30 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           email: user.email,
           name: user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : null,
           role: user.role,
+          needsProfile: !user.firstName || !user.lastName, // NEW
         };
       },
     }),
   ],
 
   callbacks: {
-    // Carry id/role from the user object into the JWT, then into the session.
     async jwt({ token, user, trigger, session }) {
       if (user) {
         token.id = user.id;
         token.role = (user as { role: string }).role;
+        token.needsProfile = (user as { needsProfile: boolean }).needsProfile;
       }
       if (trigger === "update" && session?.name) {
         token.name = session.name;
+        token.needsProfile = false; // profile just got completed
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
-        (session.user as { id?: string; role?: string }).id = token.id as string;
-        (session.user as { id?: string; role?: string }).role = token.role as string;
+        (session.user as { id?: string; role?: string; needsProfile?: boolean }).id = token.id as string;
+        (session.user as { id?: string; role?: string; needsProfile?: boolean }).role = token.role as string;
+        (session.user as { id?: string; role?: string; needsProfile?: boolean }).needsProfile = token.needsProfile as boolean;
       }
       return session;
     },

@@ -2,7 +2,7 @@
 
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { signIn, useSession } from "next-auth/react";
+import { signIn, useSession, getSession } from "next-auth/react";
 import { Button } from "@/components/Button";
 
 function Sparkle(props: React.SVGProps<SVGSVGElement>) {
@@ -44,7 +44,6 @@ function LoginForm() {
   const { update } = useSession();
 
   const [step, setStep] = useState<Step>("email");
-  const [isNewUser, setIsNewUser] = useState(false);
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [firstName, setFirstName] = useState("");
@@ -64,8 +63,6 @@ function LoginForm() {
     });
 
     if (res.ok) {
-      const data = await res.json();
-      setIsNewUser(Boolean(data.isNewUser));
       setStep("code");
       setStatus("idle");
     } else {
@@ -82,17 +79,23 @@ function LoginForm() {
 
     const res = await signIn("email-code", { email, code, redirect: false });
 
-    if (res?.error) {
+    if (res?.ok) {
+      // Ask the session directly rather than trusting a client-held flag —
+      // covers existing accounts with an incomplete profile too.
+      const session = await getSession();
+      const needsProfile = Boolean(
+        (session?.user as { needsProfile?: boolean } | undefined)?.needsProfile
+      );
+
+      if (needsProfile) {
+        setStep("name");
+        setStatus("idle");
+      } else {
+        router.push(next);
+      }
+    } else {
       setError("That code didn't work. Check it and try again.");
       setStatus("idle");
-      return;
-    }
-
-    if (isNewUser) {
-      setStep("name");
-      setStatus("idle");
-    } else {
-      router.push(next);
     }
   }
 
@@ -108,8 +111,6 @@ function LoginForm() {
     });
 
     if (res.ok) {
-      // Force the JWT to pick up the name we just saved, since it was
-      // baked in as null at sign-in time (session strategy is jwt).
       await update({ name: `${firstName} ${lastName}` });
       router.push(next);
     } else {
@@ -118,6 +119,7 @@ function LoginForm() {
       setStatus("idle");
     }
   }
+
 
   return (
     <main className="flex min-h-[100dvh] items-center justify-center px-6">
