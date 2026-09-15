@@ -80,11 +80,18 @@ function LoginForm() {
     const res = await signIn("email-code", { email, code, redirect: false });
 
     if (res?.ok) {
-      // Ask the session directly rather than trusting a client-held flag —
-      // covers existing accounts with an incomplete profile too.
       const session = await getSession();
+
+      if (!session?.user) {
+        // Credentials were valid, but no session was actually established —
+        // almost always a cookie problem (wrong domain, blocked cookies, etc.)
+        setError("Signed in, but couldn't start your session. Please try again.");
+        setStatus("idle");
+        return;
+      }
+
       const needsProfile = Boolean(
-        (session?.user as { needsProfile?: boolean } | undefined)?.needsProfile
+        (session.user as { needsProfile?: boolean }).needsProfile
       );
 
       if (needsProfile) {
