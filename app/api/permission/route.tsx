@@ -13,12 +13,13 @@ function isAllowedOrigin(origin: string | null): boolean {
   }
 }
 
-function corsHeaders(origin: string | null) {
-  if (!isAllowedOrigin(origin)) return {};
-  return {
-    "Access-Control-Allow-Origin": origin as string,
-    "Access-Control-Allow-Credentials": "true",
-  };
+function corsHeaders(origin: string | null): Record<string, string> {
+  const headers: Record<string, string> = {};
+  if (isAllowedOrigin(origin)) {
+    headers["Access-Control-Allow-Origin"] = origin as string;
+    headers["Access-Control-Allow-Credentials"] = "true";
+  }
+  return headers;
 }
 
 export async function GET(req: Request) {
