@@ -27,17 +27,28 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const user = await prisma.user.findUnique({ where: { email } });
         if (!user) return null;
 
-        // Most recent, unused, unexpired code for this user.
         const record = await prisma.verificationCode.findFirst({
           where: { userId: user.id, usedAt: null, expiresAt: { gt: new Date() } },
           orderBy: { createdAt: "desc" },
         });
         if (!record) return null;
 
-        const valid = await bcrypt.compare(code, record.codeHash);
-        if (!valid) return null;
+        // Lock out after too many wrong guesses, even if the code hasn't expired yet.
+        const MAX_ATTEMPTS = 5;
+        if (record.attempts >= MAX_ATTEMPTS) {
+          return null;
+        }
 
-        // Single-use: mark it consumed so it can't be replayed.
+        const valid = await bcrypt.compare(code, record.codeHash);
+
+        if (!valid) {
+          await prisma.verificationCode.update({
+            where: { id: record.id },
+            data: { attempts: { increment: 1 } },
+          });
+          return null;
+        }
+
         await prisma.verificationCode.update({
           where: { id: record.id },
           data: { usedAt: new Date() },
